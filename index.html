@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ar"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <title>دليل هواتف الموظفين</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      direction: rtl;
+      background-color: #f0f0f0;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    form input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    form button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .export-buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .export-buttons button {
+      margin: 5px;
+      padding: 10px 15px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .pdf-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .excel-btn {
+      background-color: #ffc107;
+      color: black;
+    }
+
+    #searchInput {
+      width: 50%;
+      padding: 10px;
+      margin: 20px auto;
+      display: block;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: right;
+    }
+
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+    }
+
+    .edit-btn {
+      background-color: #28a745;
+      margin-right: 5px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <h1>دليل هواتف الموظفين</h1>
+
+  <form id="employeeForm">
+    <input type="text" id="name" placeholder="الاسم" required="">
+    <input type="text" id="phone" placeholder="رقم الهاتف" required="">
+    <input type="email" id="email" placeholder="البريد الإلكتروني" required="">
+    <input type="text" id="department" placeholder="القسم" required="">
+    <button type="submit">إضافة / تحديث موظف</button>
+  </form>
+
+  <!-- 🔍 مربع البحث -->
+  <input type="text" id="searchInput" placeholder="ابحث عن موظف بالاسم أو القسم...">
+
+  <!-- 📤 أزرار التصدير -->
+  <div class="export-buttons">
+    <button class="pdf-btn" onclick="downloadPDF()">📄 حفظ كـ PDF</button>
+    <button class="excel-btn" onclick="downloadExcel()">📊 تصدير إلى Excel</button>
+  </div>
+
+  <!-- 📋 جدول الموظفين -->
+  <table id="employeeTableContainer">
+    <thead>
+      <tr>
+        <th>الاسم</th>
+        <th>رقم الهاتف</th>
+        <th>البريد الإلكتروني</th>
+        <th>القسم</th>
+        <th>الخيارات</th>
+      </tr>
+    </thead>
+    <tbody id="employeeTable"></tbody>
+  </table>
+
+  <!-- مكتبات PDF و Excel -->
+  <script src="./دليل هواتف الموظفين_files/html2pdf.bundle.min.js.تنزيل"></script>
+  <script src="./دليل هواتف الموظفين_files/xlsx.full.min.js.تنزيل"></script>
+
+  <script>
+    let employees = JSON.parse(localStorage.getItem('employees')) || [];
+    let editingIndex = -1;
+
+    const form = document.getElementById('employeeForm');
+    const table = document.getElementById('employeeTable');
+    const searchInput = document.getElementById('searchInput');
+
+    function renderTable() {
+      table.innerHTML = "";
+      employees.forEach((emp, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${emp.name}</td>
+          <td>${emp.phone}</td>
+          <td>${emp.email}</td>
+          <td>${emp.department}</td>
+          <td>
+            <button class="btn edit-btn" onclick="editEmployee(${index})">تعديل</button>
+            <button class="btn delete-btn" onclick="deleteEmployee(${index})">حذف</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const email = document.getElementById('email').value;
+      const department = document.getElementById('department').value;
+
+      const employee = { name, phone, email, department };
+
+      if (editingIndex === -1) {
+        employees.push(employee);
+      } else {
+        employees[editingIndex] = employee;
+        editingIndex = -1;
+      }
+
+      localStorage.setItem('employees', JSON.stringify(employees));
+      renderTable();
+      form.reset();
+    });
+
+    function deleteEmployee(index) {
+      if (confirm("هل أنت متأكد من حذف هذا الموظف؟")) {
+        employees.splice(index, 1);
+        localStorage.setItem('employees', JSON.stringify(employees));
+        renderTable();
+      }
+    }
+
+    function editEmployee(index) {
+      const emp = employees[index];
+      document.getElementById('name').value = emp.name;
+      document.getElementById('phone').value = emp.phone;
+      document.getElementById('email').value = emp.email;
+      document.getElementById('department').value = emp.department;
+      editingIndex = index;
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('employeeTableContainer');
+      const opt = {
+        margin:       0.3,
+        filename:     'دليل_الموظفين.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().from(element).set(opt).save();
+    }
+
+    function downloadExcel() {
+      const ws = XLSX.utils.json_to_sheet(employees);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "الموظفين");
+      XLSX.writeFile(wb, "دليل_الموظفين.xlsx");
+    }
+
+    // 🔍 البحث
+    searchInput.addEventListener('input', function () {
+      const value = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#employeeTable tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(value) ? '' : 'none';
+      });
+    });
+
+    renderTable();
+  </script>
+
+
+
+
+</body></html>
